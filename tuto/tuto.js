@@ -39,3 +39,12 @@ document.onkeydown = function(event){
   style.left = String(x) + 'px';
   style.top = String(y) + 'px';
 }
+
+
+addWalls();
+
+function addWalls() {
+  for (var i = 0; i < 100; i++){
+    var div = document.createElement('div')
+  }
+}
