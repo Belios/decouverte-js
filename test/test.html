@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <link rel="stylesheet" href="test.css">
+<script type="text/javascript">
+
+/* Variable permettant de dessiner dans le canvas / null pour le rendre persistant */
+var ctx = null;
+/* Définition de la map de jeu */
+var gameMap = [
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0,
+  0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0,
+	0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0,
+	0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0,
+	0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0,
+	0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0,
+	0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0,
+	0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0,
+  0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0,
+	0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0,
+  0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0,
+  0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0,
+	0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0,
+	0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0,
+	0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0,
+	0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0,
+	0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0,
+  0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0,
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+
+];
+/* VARIABLES GLOBALES */
+/* Variables définissant la taille en px des tiles */
+var tileW = 40, tileH = 40;
+/* Largeur et hauteur de la map */
+var mapW = 20, mapH = 20;
+/* Informations pour calculer le FPS */
+var currentSecond = 0, frameCount = 0, framesLastSecond = 0;
+var lastFrameTime = 0;
+
+/* On indique les keys des flèches directionnelles et on les place en false car elles ne sont pas pressées */
+var keysDown = {
+        37 : false,
+        38 : false,
+        39 : false,
+        40 : false,
+};
+
+/* On crée la variable du personnage */
+var player = new Character();
+
+/* FIN VARIABLES GLOBALES */
+
+function Character() {
+          this.tileFrom = [1,1];  /* Indique les coordonnées d'où se déplace le personnage */
+          this.tileTo = [1,1];    /* Indique les coordonnées de la destination du personnage */
+          this.timeMoved = 0;     /* Le moment où le personnage se déplace */
+          this.dimensions = [40,40];  /* Les dimensions du personnage */
+          this.position = [40,40];  /* la position réelle du personnage en pixels */
+          this.delayMove = 200;   /* Le temps que le personnage met à se déplacer d'une tile à l'autre */
+}
+
+/* Fonction de calcul de position du personnage */
+
+Character.prototype.placeAt = function(x, y) {    /* On récupère la position x et y du bloc de destination */
+	this.tileFrom	= [x,y];   /* Les coordonnées de départ */
+	this.tileTo		= [x,y];    /* Les coordonnées d'arrivée */
+  /* On calcule la position exacte du joueur par ce calcul :
+  (TileWidth * x(Destination)) + (TileWidth - CharacterWidth) / 2
+  (TileHeight * y(Destination)) + (TileHeight - CharacterHeight) / 2 */
+
+	this.position	= [((tileW * x)+((tileW - this.dimensions[0]) / 2)),
+		((tileH * y)+((tileH - this.dimensions[1]) / 2))];
+};
+
+/* Fonction de movement du personnage */
+/* On vérifie avec cette fonction si les coordonnées de départ et d'arrivée sont les mêmes, si c'est le cas, le personnage ne bouge pas et donc on retourne la fonction en false. */
+Character.prototype.processMovement = function(t) {
+	if(this.tileFrom[0]==this.tileTo[0] && this.tileFrom[1]==this.tileTo[1]) {
+    return false;
+  }
+/* On calcule ici si le temps pour se déplacer d'un bloc est p égal ou plus long que le delayMove, si c'est le cas on place directement le personnage sur la tile de destination */
+  if((t-this.timeMoved)>=this.delayMove)
+  	{
+  		this.placeAt(this.tileTo[0], this.tileTo[1]);
+  	}
+/* Autrement on calcule la position de départ du personnage */
+    else
+	{
+		this.position[0] = (this.tileFrom[0] * tileW) + ((tileW-this.dimensions[0])/2);
+		this.position[1] = (this.tileFrom[1] * tileH) + ((tileH-this.dimensions[1])/2);
+/* Puis on déduit la distance de déplacement par : On divise la largeur d'un bloc par le delayMove et on multiplie le tout par le temps écoulé (ici entre 0 et 200) */
+    if(this.tileTo[0] != this.tileFrom[0]) {      /* Pour x (horizontal) */
+
+      var diff = (tileW / this.delayMove) * (t-this.timeMoved);
+			this.position[0]+= (this.tileTo[0]<this.tileFrom[0] ? 0 - diff : diff);
+		}
+
+		if(this.tileTo[1] != this.tileFrom[1]){       /* Pour y (vertical) */
+
+      var diff = (tileH / this.delayMove) * (t-this.timeMoved);
+			this.position[1]+= (this.tileTo[1]<this.tileFrom[1] ? 0 - diff : diff);
+		}
+
+/* On arrondi à l'entier supérieur pour fluidifier le mouvement */
+
+    this.position[0] = Math.round(this.position[0]);
+    this.position[1] = Math.round(this.position[1]);
+
+	}
+
+/* Ici on retourne la fonction pour indiquer qu'un mouvement est en cours par true */
+
+	return true;
+};
+
+/* Place nos coordonnées comme Index sur la GameMap */
+
+function toIndex(x, y)
+{
+	return((y * mapW) + x);
+}
+
+/* Fonction au chargement de la page */
+window.onload = function()
+{
+	ctx = document.getElementById('game').getContext("2d"); /* On définit la variable ctx */
+	requestAnimationFrame(drawGame);       /* On appelle la fonction de dessin au chargement de la page */
+	ctx.font = "bold 10pt sans-serif";     /* On définit le police inscrite dans le jeu */
+
+/* Crée un eventListener pour indiquée quand une touche directionnelle est appuyée ou non */
+  window.addEventListener("keydown", function(e) {
+		if(e.keyCode>=37 && e.keyCode<=40) { keysDown[e.keyCode] = true; }
+	});
+	window.addEventListener("keyup", function(e) {
+		if(e.keyCode>=37 && e.keyCode<=40) { keysDown[e.keyCode] = false; }
+	});
+
+
+};
+
+/* FONCTION PRINCIPALE */
+
+/* On appelle notre fonction pour voir si le canvas dessine les tiles, si "null" alors la fonctionne abandonne */
+  function drawGame()
+{
+	if(ctx==null) { return; }
+
+/* On calcule le temps passée dans cette variable pour pouvoir l'approprier au temps mis pour dessiner
+  var currentFrameTime = Date.now();
+	var timeElapsed = currentFrameTime - lastFrameTime;
+
+/* On lance notre fonction pour compter les framerates */
+  var sec = Math.floor(Date.now()/1000);
+	 if(sec!=currentSecond) {
+		currentSecond = sec;
+		framesLastSecond = frameCount;
+		frameCount = 1;
+	 }
+	else { frameCount++; }
+
+
+  if(!player.processMovement(currentFrameTime))	{
+
+    if(keysDown[38] && player.tileFrom[1]>0 && gameMap[toIndex(player.tileFrom[0], player.tileFrom[1]-1)]==1) {
+      player.tileTo[1]-= 1;
+    }
+		else if(keysDown[40] && player.tileFrom[1]<(mapH-1) && gameMap[toIndex(player.tileFrom[0], player.tileFrom[1]+1)]==1) {
+      player.tileTo[1]+= 1;
+    }
+		else if(keysDown[37] && player.tileFrom[0]>0 && gameMap[toIndex(player.tileFrom[0]-1, player.tileFrom[1])]==1) {
+      player.tileTo[0]-= 1;
+    }
+		else if(keysDown[39] && player.tileFrom[0]<(mapW-1) && gameMap[toIndex(player.tileFrom[0]+1, player.tileFrom[1])]==1) {
+      player.tileTo[0]+= 1;
+    }
+
+    if(player.tileFrom[0]!=player.tileTo[0] || player.tileFrom[1]!=player.tileTo[1])
+		{
+      player.timeMoved = currentFrameTime;
+    }
+	}
+
+/* Une loop pour dessiner chaque bloc */
+  for(var y = 0; y < mapH; ++y)     /* Dessine colonne par colonne */
+  	{
+  		for(var x = 0; x < mapW; ++x) /* Dessine ligne par ligne */
+  		{
+        /* Pour dessiner sur le bloc actuel du pointeur on calcule sur la map la valeur colonne*largeur de map auquel on ajoute la valeur ligne pour dessiner chaque bloc case par case */
+        switch(gameMap[((y*mapW)+x)])
+			{
+				case 0:
+					ctx.fillStyle = "#EFB113";   /* Couleur des blocs mur */
+					break;
+				default:
+					ctx.fillStyle = "#4C4242";   /* couleur par défaut, donc de la zone déplacement */
+			}
+
+			ctx.fillRect( x*tileW, y*tileH, tileW, tileH);   /* fonction de remplissage de chaque case */
+    }
+}
+/*FIN FONCTION PRINCIPALE */
+
+ctx.fillStyle = "#0000ff";
+ctx.fillRect(player.position[0], player.position[1],
+	      player.dimensions[0], player.dimensions[1]);
+
+/* Affichage sur l'écran des FPS */
+ctx.fillStyle = "red";    /* Couleur d'affichage */
+ctx.fillText("FPS: " + framesLastSecond, 10, 20); /* Display du FPS */
+
+requestAnimationFrame(drawGame);  /* Relance la fonction pour recharger le nouveau FPS */
+}
+
+</script>
+
+</head>
+<body>
+
+<canvas id="game" width="800" height="800"></canvas>
+
+</body>
+</html>
