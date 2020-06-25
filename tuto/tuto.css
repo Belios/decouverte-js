@@ -2,13 +2,9 @@ body {
   background-color: rgb(76, 66, 66);
 }
 #block {
-  width : 800px;
-  height: 800px;
   background-color: rgb(239, 177, 19);
   margin:auto;
   position:relative;
-
-
 }
 
 #pawn {
@@ -19,4 +15,5 @@ body {
   top: 0;
   left: 0;
   position:absolute;
+  z-index: 100;
 }
