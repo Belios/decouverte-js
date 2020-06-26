@@ -1,76 +1,50 @@
 <!DOCTYPE html>
+
 <html lang="en" dir="ltr">
+
   <head>
+
     <meta charset="utf-8">
+
     <title></title>
+
     <link rel="stylesheet" href="sprite.css">
+
   </head>
+
   <body>
 
-    <!-- <canvas id="canvas"></canvas>
+    <style>
+    html, body {
+      height: 100%;
+      margin: 0;
+    }
 
-    <script>
+    body {
+      background: black;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
 
-        var canWidth = 100;
-        var canHeight = 100;
+    canvas {
+      background: rgb(239, 177, 19);
+    }
 
-// Position où la frame sera dessinée //
-        var x = 0;
-        var y = 0;
+    #ennemy {
+      width: 40px;
+      height: 40px;
+      position:absolute;
+      background-color: red;
+      background-size: contain;
+      left: 0;
+      top: 0;
+      z-index: 95;
 
-        var trackLeft = 1;
-        var trackRight = 0;
+    }
+    </style>
 
-        var srcX;
-        var srcY;
 
-        var sheetWidth = 137;
-        var sheetHeight = 37;
-
-        var cols = 5;
-        var rows = 1;
-
-        var width = sheetWidth / cols ;
-        var height = sheetHeight / rows ;
-
-        var currentFrame = 0;
-
-        var character = new Image();
-        character.src = "frame1-sonic.png";
-
-        var canvas = document.getElementById('canvas');
-        canvas.width = canWidth;
-        canvas.height = canHeight;
-        var ctx = canvas.getContext('2d');
-
-        function moveRight(){
-
-        }
-        function moveLeft(){
-
-        }
-
-        function updateFrame() {
-            currentFrame = ++currentFrame % cols;
-
-            srcX = currentFrame * width;
-            srcY = 0;
-
-            ctx.clearRect(x, y, width, height);
-
-        }
-
-        function drawImage() {
-          updateFrame();
-          ctx.drawImage(character, srcX, srcY, width, height, x, y, width, height);
-        }
-
-        setInterval(function() {
-            drawImage();
-
-        }, 100);
-
-    </script> -->
 
 /* Fonction pour animer un sprite sheet dans les 4 directions */
 
