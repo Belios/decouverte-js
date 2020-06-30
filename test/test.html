@@ -10,13 +10,13 @@ var ctx = null;
 var gameMap = [
 	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 	0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0,
-  0, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0,
-	0, 1, 2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0,
+  0, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 1, 1, 0,
+	0, 1, 2, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 1, 2, 2, 1, 0,
 	0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0,
+	0, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 1, 1, 0,
 	0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0,
-	0, 1, 1, 1, 1, 1, 1, 3, 3, 3, 3, 1, 1, 1, 1, 1, 1, 1, 1, 0,
+	0, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 0,
 	0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0,
-	0, 1, 1, 1, 1, 1, 1, 3, 3, 3, 3, 1, 1, 1, 1, 1, 1, 1, 1, 0,
   0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0,
 	0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0,
   0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0,
@@ -41,6 +41,8 @@ var currentSecond = 0,
     framesLastSecond = 0,
     lastFrameTime = 0;
 
+var tileset = null, tilesetURL = "greenhillsprite.png", tilesetLoaded = false;
+
 var floorTypes = {
 	  solid: 0,
 	  path: 1,
@@ -49,10 +51,17 @@ var floorTypes = {
 };
 
 var tileTypes = {
-	0 : { colour:"#685b48", floor:floorTypes.solid	},
+	0 : { colour:"#685b48", floor:floorTypes.solid, sprite:[{x:71,y:467,w:40,h:40}]	},
 	1 : { colour:"#5aa457", floor:floorTypes.path	},
 	2 : { colour:"#e8bd7a", floor:floorTypes.concrete	},
 	3 : { colour:"#286625", floor:floorTypes.breakable	},
+};
+
+var directions = {
+	up		: 0,
+	right	: 1,
+	down	: 2,
+	left	: 3
 };
 
 /* On indique les keys des flèches directionnelles et on les place en false car elles ne sont pas pressées */
@@ -63,21 +72,46 @@ var keysDown = {
         40 : false,
 };
 
+var viewport = {
+	screen		: [0,0],
+	startTile	: [0,0],
+	endTile		: [0,0],
+	offset		: [0,0],
+	update		: function(px, py) {
+		this.offset[0] = Math.floor((this.screen[0]/2) - px);
+		this.offset[1] = Math.floor((this.screen[1]/2) - py);
+
+		var tile = [ Math.floor(px/tileW), Math.floor(py/tileH) ];
+
+		this.startTile[0] = tile[0] - 1 - Math.ceil((this.screen[0]/2) / tileW);
+		this.startTile[1] = tile[1] - 1 - Math.ceil((this.screen[1]/2) / tileH);
+
+		if(this.startTile[0] < 0) { this.startTile[0] = 0; }
+		if(this.startTile[1] < 0) { this.startTile[1] = 0; }
+
+		this.endTile[0] = tile[0] + 1 + Math.ceil((this.screen[0]/2) / tileW);
+		this.endTile[1] = tile[1] + 1 + Math.ceil((this.screen[1]/2) / tileH);
+
+		if(this.endTile[0] >= mapW) { this.endTile[0] = mapW-1; }
+		if(this.endTile[1] >= mapH) { this.endTile[1] = mapH-1; }
+	}
+};
+
 /* On crée la variable du personnage */
 var player = new Character();
 
 /* FIN VARIABLES GLOBALES */
-const WIDTH = 24;
-const HEIGHT = 32;
-const SCALE_W = WIDTH * 1.66;
-const SCALE_H = HEIGHT * 1.25;
-const CYCLE_LOOP = [1, 0, 1, 2];
-const FACING_DOWN = 0;
-const FACING_UP = 3;
-const FACING_LEFT = 1;
-const FACING_RIGHT = 2;
-const FRAME_LIMIT = 12;
-const MOVEMENT_SPEED = 0.1;
+// const WIDTH = 24;
+// const HEIGHT = 32;
+// const SCALE_W = WIDTH * 1.66;
+// const SCALE_H = HEIGHT * 1.25;
+// const CYCLE_LOOP = [1, 0, 1, 2];
+// const FACING_DOWN = 0;
+// const FACING_UP = 3;
+// const FACING_LEFT = 1;
+// const FACING_RIGHT = 2;
+// const FRAME_LIMIT = 12;
+// const MOVEMENT_SPEED = 0.1;
 
 function Character() {
           this.tileFrom = [1,1];  /* Indique les coordonnées d'où se déplace le personnage */
@@ -86,7 +120,14 @@ function Character() {
           this.dimensions = [40,40];  /* Les dimensions du personnage */
           this.position = [40,40];  /* la position réelle du personnage en pixels */
           this.delayMove = 200;   /* Le temps que le personnage met à se déplacer d'une tile à l'autre */
+          this.direction	= directions.up;
+this.sprites = {};
+this.sprites[directions.up]		= [{x:0,y:120,w:30,h:30}];
+this.sprites[directions.right]	= [{x:0,y:150,w:30,h:30}];
+this.sprites[directions.down]	= [{x:0,y:180,w:30,h:30}];
+this.sprites[directions.left]	= [{x:0,y:210,w:30,h:30}];
 }
+
 
 /* Fonction de calcul de position du personnage */
 
@@ -181,35 +222,48 @@ window.onload = function()
 		if(e.keyCode>=37 && e.keyCode<=40) { keysDown[e.keyCode] = false; }
 	});
 
+  viewport.screen = [document.getElementById('game').width,
+		document.getElementById('game').height];
+
+  tileset = new Image();
+  	tileset.onerror = function()
+  	{
+  		ctx = null;
+  		alert("Failed loading tileset.");
+  	};
+  	tileset.onload = function() { tilesetLoaded = true; };
+  	tileset.src = tilesetURL;
 
 };
 
 /* FONCTION PRINCIPALE */
 
-let canvas = document.querySelector('canvas');
-// let ctx = canvas.getContext('2d');
-let keyPresses = {};
-let currentDirection = FACING_DOWN;
-let currentLoopIndex = 1;
-let frameCount = 0;
-let positionX = 0;
-let positionY = 0;
-let img = new Image();
-
-window.addEventListener('keydown', keyDownListener);
-  function keyDownListener(event) {
-    keyPresses[event.key] = true;
-  }
-
-window.addEventListener('keyup', keyUpListener);
-  function keyUpListener(event) {
-    keyPresses[event.key] = false;
-  }
+// let canvas = document.querySelector('canvas');
+// // let ctx = canvas.getContext('2d');
+// let keyPresses = {};
+// let currentDirection = FACING_DOWN;
+// let currentLoopIndex = 1;
+// let frameCount = 0;
+// let positionX = 0;
+// let positionY = 0;
+// let img = new Image();
+//
+// window.addEventListener('keydown', keyDownListener);
+//   function keyDownListener(event) {
+//     keyPresses[event.key] = true;
+//   }
+//
+// window.addEventListener('keyup', keyUpListener);
+//   function keyUpListener(event) {
+//     keyPresses[event.key] = false;
+//   }
 
 /* On appelle notre fonction pour voir si le canvas dessine les tiles, si "null" alors la fonctionne abandonne */
   function drawGame()
 {
 	if(ctx==null) { return; }
+
+	if(!tilesetLoaded) { requestAnimationFrame(drawGame); return; }
 
 /* On calcule le temps passée dans cette variable pour pouvoir l'approprier au temps mis pour dessiner */
   var currentFrameTime = Date.now();
@@ -224,74 +278,74 @@ window.addEventListener('keyup', keyUpListener);
 	 }
 	else { frameCount++; }
 
-  function loadImage(){
-    img.src = 'allsonicsprite.png';
-    img.onload = function() {
-    window.requestAnimationFrame(gameLoop);
-    };
-  }
+  // function loadImage(){
+  //   img.src = 'allsonicsprite.png';
+  //   img.onload = function() {
+  //   window.requestAnimationFrame(gameLoop);
+  //   };
+  // }
 
-  function drawFrame(frameX, frameY, canvasX, canvasY) {
-    ctx.drawImage(img,
-                frameX * WIDTH, frameY * HEIGHT, WIDTH, HEIGHT,
-                canvasX, canvasY, SCALE_W, SCALE_H);
-  }
+  // function drawFrame(frameX, frameY, canvasX, canvasY) {
+  //   ctx.drawImage(img,
+  //               frameX * WIDTH, frameY * HEIGHT, WIDTH, HEIGHT,
+  //               canvasX, canvasY, SCALE_W, SCALE_H);
+  // }
+  //
+  // loadImage();
 
-  loadImage();
-
-  function gameLoop() {
-    // ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-    let hasMoved = false;
-
-    if (keyPresses.ArrowUp) {
-      positionY -= MOVEMENT_SPEED;
-      currentDirection = FACING_UP;
-      hasMoved = true;
-    }
-    else if (keyPresses.ArrowDown) {
-      positionY += MOVEMENT_SPEED;
-      currentDirection = FACING_DOWN;
-      hasMoved = true;
-    }
-    if (keyPresses.ArrowLeft) {
-      positionX -= MOVEMENT_SPEED;
-      currentDirection = FACING_LEFT;
-      hasMoved = true;
-    }
-    else if (keyPresses.ArrowRight) {
-      positionX += MOVEMENT_SPEED;
-      currentDirection = FACING_RIGHT;
-      hasMoved = true;
-    }
-
-    if (hasMoved) {
-      frameCount++;
-      if (frameCount >= FRAME_LIMIT) {
-        frameCount = 0;
-        currentLoopIndex++;
-          if (currentLoopIndex >= CYCLE_LOOP.length) {
-            currentLoopIndex = 0;
-          }
-        }
-      }
-
-    if (!hasMoved) {
-      currentLoopIndex = 0;
-    }
-    function moveCharacter(deltaX, deltaY, direction) {
-      if (positionX + deltaX > 0 && positionX + SCALE_W + deltaX < canvas.width) {
-        positionX += deltaX;
-      }
-      if (positionY + deltaY > 0 && positionY + SCALE_H + deltaY < canvas.height) {
-        positionY += deltaY;
-      }
-      currentDirection = direction;
-    }
-
-    drawFrame(CYCLE_LOOP[currentLoopIndex], currentDirection, positionX, positionY);
-    window.requestAnimationFrame(gameLoop);
-  }
+  // function gameLoop() {
+  //   // ctx.clearRect(0, 0, canvas.width, canvas.height);
+  //
+  //   let hasMoved = false;
+  //
+  //   if (keyPresses.ArrowUp) {
+  //     positionY -= MOVEMENT_SPEED;
+  //     currentDirection = FACING_UP;
+  //     hasMoved = true;
+  //   }
+  //   else if (keyPresses.ArrowDown) {
+  //     positionY += MOVEMENT_SPEED;
+  //     currentDirection = FACING_DOWN;
+  //     hasMoved = true;
+  //   }
+  //   if (keyPresses.ArrowLeft) {
+  //     positionX -= MOVEMENT_SPEED;
+  //     currentDirection = FACING_LEFT;
+  //     hasMoved = true;
+  //   }
+  //   else if (keyPresses.ArrowRight) {
+  //     positionX += MOVEMENT_SPEED;
+  //     currentDirection = FACING_RIGHT;
+  //     hasMoved = true;
+  //   }
+  //
+  //   if (hasMoved) {
+  //     frameCount++;
+  //     if (frameCount >= FRAME_LIMIT) {
+  //       frameCount = 0;
+  //       currentLoopIndex++;
+  //         if (currentLoopIndex >= CYCLE_LOOP.length) {
+  //           currentLoopIndex = 0;
+  //         }
+  //       }
+  //     }
+  //
+  //   if (!hasMoved) {
+  //     currentLoopIndex = 0;
+  //   }
+  //   function moveCharacter(deltaX, deltaY, direction) {
+  //     if (positionX + deltaX > 0 && positionX + SCALE_W + deltaX < canvas.width) {
+  //       positionX += deltaX;
+  //     }
+  //     if (positionY + deltaY > 0 && positionY + SCALE_H + deltaY < canvas.height) {
+  //       positionY += deltaY;
+  //     }
+  //     currentDirection = direction;
+  //   }
+  //
+  //   drawFrame(CYCLE_LOOP[currentLoopIndex], currentDirection, positionX, positionY);
+  //   window.requestAnimationFrame(gameLoop);
+  // }
 
 
 /*  Initialiser le mouvement du personnage */
@@ -303,6 +357,10 @@ window.addEventListener('keyup', keyUpListener);
 		else if(keysDown[37] && player.canMoveLeft())	{ player.moveLeft(currentFrameTime); }
 		else if(keysDown[39] && player.canMoveRight())	{ player.moveRight(currentFrameTime); }
   }
+
+  viewport.update(player.position[0] + (player.dimensions[0]/2),
+		player.position[1] + (player.dimensions[1]/2));
+
 /* Fonction permettant de voir pour chaque touche si :
       -La touche en question est pressée
       -La destination du personnage fait partie des limites du plateau. ( On vérifie si, quand la position de départ est modifiée,elle reste comprise entre la valeur Height et Width de la map )
@@ -332,9 +390,17 @@ window.addEventListener('keyup', keyUpListener);
   	{
   		for(var x = 0; x < mapW; ++x) /* Dessine ligne par ligne */
   		{
+        for(var y = viewport.startTile[1]; y <= viewport.endTile[1]; ++y)
+
+        	{
+        		for(var x = viewport.startTile[0]; x <= viewport.endTile[0]; ++x)
+
+            {
+
         /* Pour dessiner sur le bloc actuel du pointeur on calcule sur la map la valeur colonne*largeur de map auquel on ajoute la valeur ligne pour dessiner chaque bloc case par case */
         switch(gameMap[((y*mapW)+x)])
 			{
+
 				case 0:
 					ctx.fillStyle = "#EFB113";   /* Couleur des blocs mur */
 					break;
@@ -342,6 +408,10 @@ window.addEventListener('keyup', keyUpListener);
 					ctx.fillStyle = "#4C4242";   /* couleur par défaut, donc de la zone déplacement */
 			}
 
+      ctx.fillRect( viewport.offset[0] + (x*tileW), viewport.offset[1] + (y*tileH),
+				tileW, tileH);
+      }
+    }
         ctx.fillStyle = tileTypes[gameMap[toIndex(x,y)]].colour;
 
 			ctx.fillRect( x*tileW, y*tileH, tileW, tileH);   /* fonction de remplissage de chaque case */
@@ -351,8 +421,8 @@ window.addEventListener('keyup', keyUpListener);
 
 /* On dessine ici le personnage (après le plateau autrement il aurait été caché) */
 ctx.fillStyle = "#0000ff";
-ctx.fillRect(player.position[0], player.position[1],
-	      player.dimensions[0], player.dimensions[1]);
+ctx.fillRect(viewport.offset[0] + player.position[0], viewport.offset[1] + player.position[1],
+		player.dimensions[0], player.dimensions[1]);
 
 
 

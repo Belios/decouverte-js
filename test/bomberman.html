@@ -310,12 +310,12 @@ function Explosion(row, col, dir, center) {
   };
 }
 
-function gameOver() {
-  ctx.save();
-  ctx.fillText("Game Over", 5, 15)
+// function gameOver() {
+//   ctx.save();
+//   ctx.fillText("Game Over", 5, 15)
 
-  ctx.restore();
-}
+//   ctx.restore();
+// }
 
 // player character (just a simple circle)
 const player = {
@@ -335,7 +335,7 @@ const player = {
     context.fill();
   }
 }
-gameOver();
+// gameOver();
 
 // game loop
 let last;
