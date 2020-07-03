@@ -1,0 +1,32 @@
+body{
+  background-color: grey;
+}
+
+
+#board{
+  background-color: white;
+  margin: auto;
+  position: relative;
+}
+#pawn{
+  width: 39px;
+  height: 39px;
+  background-color: blue;
+  border-style: double;
+  border-color: grey;
+  border-width: 1px;
+  position: absolute;
+  z-index: 100;
+}
+
+
+/* #vilain{
+  width: 40px;
+  height: 40px;
+  position: absolute;
+  background-color: yellow;
+  background-size: contain;
+  left: 0;
+  top : 0;
+  z-index: 95;
+} */

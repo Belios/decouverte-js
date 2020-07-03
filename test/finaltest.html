@@ -34,7 +34,7 @@ var tileW = 40, tileH = 40;
 var mapW = 20, mapH = 20;
 var currentSecond = 0, frameCount = 0, framesLastSecond = 0, lastFrameTime = 0;
 
-var tileset = null, tilesetURL = "greenhillsprite.png", tilesetLoaded = false;
+var tileset = null, tilesetURL = "greenhillground.png", tilesetLoaded = false;
 
 var floorTypes = {
 	solid	: 0,
@@ -42,10 +42,10 @@ var floorTypes = {
 	water	: 2
 };
 var tileTypes = {
-	0 : { colour:"#685b48", floor:floorTypes.solid, sprite:[{x:90,y:423,w:40,h:40}]	},
-	1 : { colour:"#5aa457", floor:floorTypes.path,	sprite:[{x:382,y:425,w:40,h:40}]	},
+	0 : { colour:"#685b48", floor:floorTypes.solid, sprite:[{x:75,y:282,w:40,h:40}]	},
+	1 : { colour:"#5aa457", floor:floorTypes.path,	sprite:[{x:367,y:415,w:40,h:40}]	},
 	2 : { colour:"#e8bd7a", floor:floorTypes.path,	sprite:[{x:124,y:15,w:25,h:40}]	},
-	3 : { colour:"#286625", floor:floorTypes.solid,	sprite:[{x:336,y:425,w:40,h:40}]	},
+	3 : { colour:"#286625", floor:floorTypes.solid,	sprite:[{x:75,y:341.5,w:40,h:40}]	},
 	4 : { colour:"#678fd9", floor:floorTypes.water,	sprite:[{x:160,y:0,w:40,h:40}]	}
 };
 
@@ -99,12 +99,12 @@ function Character()
 	this.position	= [45,45];
 	this.delayMove	= 200;
 
-	this.direction	= directions.up;
+	this.direction	= directions.down;
 	this.sprites = {};
-	this.sprites[directions.up]		= [{x:189,y:270,w:30,h:30}];
-	this.sprites[directions.right]	= [{x:189,y:240,w:30,h:30}];
-	this.sprites[directions.down]	= [{x:189.5,y:173,w:30,h:30}];
-	this.sprites[directions.left]	= [{x:189,y:210,w:30,h:30}];
+	this.sprites[directions.up]		= [{x:22.8,y:96,w:26.4,h:32}];
+	this.sprites[directions.right]	= [{x:22.8,y:64,w:26.4,h:32}];
+	this.sprites[directions.down]	= [{x:22.5,y:0,w:27,h:32}];
+	this.sprites[directions.left]	= [{x:22.8,y:32,w:26.4,h:32}];
 }
 Character.prototype.placeAt = function(x, y)
 {
