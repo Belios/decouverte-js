@@ -2,7 +2,7 @@
 <html>
 <head>
 
-
+<link rel="stylesheet" href="final.css">
 
 <script type="text/javascript">
 
@@ -218,7 +218,7 @@ function drawGame()
 	viewport.update(player.position[0] + (player.dimensions[0]/2),
 		player.position[1] + (player.dimensions[1]/2));
 
-	ctx.fillStyle = "#000000";
+	ctx.fillStyle = "#ff0000";
 	ctx.fillRect(0, 0, viewport.screen[0], viewport.screen[1]);
 
 	for(var y = viewport.startTile[1]; y <= viewport.endTile[1]; ++y)
@@ -254,7 +254,11 @@ function drawGame()
 </head>
 <body>
 
-<canvas id="game" width="800" height="800"></canvas>
+<canvas id="game" width="800" height="800" style="background: url(background.png) no-repeat center center;
+        border:10px solid #000000;">
+
+</canvas>
+
 
 </body>
 </html>
